@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        h2 {
+            margin-top: 20px;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        td input[type="number"], td input[type="text"] {
+            width: 70px;
+            text-align: center;
+            padding: 5px;
+        }
+
+        td input[type="checkbox"] {
+            transform: scale(1.5);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .result h2 {
+            font-size: 1.5em;
+            color: #444;
+        }
+
+        .result p {
+            font-size: 1.2em;
+            color: #555;
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            margin: 10px;
+            width: 250px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        label {
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Attendance Tracker</h1>
+
+    <div class="container">
+        <div>
+            <label for="studentName">Student Name:</label>
+            <input type="text" id="studentName" placeholder="Enter student's name" />
+        </div>
+
+        <h2>Attendance for 24 Weeks</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Week</th>
+                    <th>Monday</th>
+                    <th>Tuesday</th>
+                    <th>Wednesday</th>
+                    <th>Thursday</th>
+                    <th>Friday</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceTableBody"></tbody>
+        </table>
+
+        <br>
+        <button type="button" onclick="calculateAttendance()">Calculate Attendance</button>
+
+        <div class="result">
+            <h2>Results for <span id="studentNameDisplay">Student</span>:</h2>
+            <p id="totalAttendance">Total Attendance: 0 hours</p>
+            <p id="attendancePercentage">Attendance Percentage: 0%</p>
+            <p id="requiredAttendance">Required Attendance for 75%: 0 hours</p>
+        </div>
+    </div>
+
+    <script>
+        const totalWeeks = 24;
+        const classHoursPerDay = 6;
+
+        function generateAttendanceTable() {
+            let tableBody = document.getElementById('attendanceTableBody');
+            let weeksHtml = '';
+
+            for (let i = 1; i <= totalWeeks; i++) {
+                weeksHtml += `
+                <tr>
+                    <td>Week ${i}</td>
+                    ${['mon', 'tue', 'wed', 'thu', 'fri'].map(day => `
+                        <td>
+                            <input type="number" id="week${i}_${day}_hours" placeholder="Hours" min="0" max="${classHoursPerDay}" />
+                            <br><label>Holiday</label><input type="checkbox" id="week${i}_${day}_holiday" onchange="toggleHoliday(${i}, '${day}')" />
+                        </td>
+                    `).join('')}
+                </tr>`;
+            }
+
+            tableBody.innerHTML = weeksHtml;
+        }
+
+        function toggleHoliday(week, day) {
+            let hoursInput = document.getElementById(`week${week}_${day}_hours`);
+            let isHoliday = document.getElementById(`week${week}_${day}_holiday`).checked;
+
+            if (isHoliday) {
+                hoursInput.value = "";
+                hoursInput.disabled = true;
+            } else {
+                hoursInput.disabled = false;
+            }
+        }
+
+        function calculateAttendance() {
+            let studentName = document.getElementById('studentName').value.trim() || "Student";
+            document.getElementById('studentNameDisplay').innerText = studentName;
+
+            let totalPresentHours = 0;
+            let totalPossibleHours = 0;
+
+            for (let i = 1; i <= totalWeeks; i++) {
+                for (let day of ['mon', 'tue', 'wed', 'thu', 'fri']) {
+                    let hoursInput = document.getElementById(`week${i}_${day}_hours`);
+                    let isHoliday = document.getElementById(`week${i}_${day}_holiday`).checked;
+
+                    if (!isHoliday) {
+                        totalPossibleHours += classHoursPerDay;  
+                        totalPresentHours += parseInt(hoursInput.value) || 0;
+                    }
+                }
+            }
+
+            let percentage = totalPossibleHours > 0 ? (totalPresentHours / totalPossibleHours) * 100 : 0;
+            let requiredAttendance = Math.ceil(0.75 * totalPossibleHours);
+            let requiredToReach75 = Math.max(0, requiredAttendance - totalPresentHours);
+
+            document.getElementById('totalAttendance').innerText = `Total Attendance: ${totalPresentHours} hours`;
+            document.getElementById('attendancePercentage').innerText = `Attendance Percentage: ${percentage.toFixed(2)}%`;
+            document.getElementById('requiredAttendance').innerText = `Required to reach 75%: ${requiredToReach75} hours`;
+        }
+
+        window.onload = generateAttendanceTable;
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
